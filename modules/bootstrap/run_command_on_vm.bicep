@@ -1,8 +1,9 @@
 
 param vmName string
 param deploymentParams object
-param appConfigName string
 param repoName string
+param svc_bus_ns_name string
+param svc_bus_q_name string
 param tags object
 param deploy_app_script bool = false
 
@@ -40,11 +41,12 @@ resource r_deploy_script_1 'Microsoft.Compute/virtualMachines/runCommands@2022-0
 
 var script_to_execute_with_vars = '''
 REPO_NAME="REPO_NAME_VAR" && \
-export APP_CONFIG_NAME="APP_CONFIG_VAR_NAME" && \
-python3 /var/$REPO_NAME/app/az_producer_for_cosmos_db.py &
+export SVC_BUS_FQDN="SVC_BUS_FQDN_VAR" && \
+export SVC_BUS_Q_NAME="SVC_BUS_Q_NAME_VAR" && \
+python3 /var/$REPO_NAME/app/function_code/az_producer_for_svc_bus &
 '''
 
-var script_to_execute = replace(replace(script_to_execute_with_vars, 'APP_CONFIG_VAR_NAME', appConfigName),'REPO_NAME_VAR', repoName)
+var script_to_execute = replace( replace( replace(script_to_execute_with_vars, 'SVC_BUS_FQDN_VAR', svc_bus_ns_name), 'SVC_BUS_Q_NAME_VAR',svc_bus_q_name),'REPO_NAME_VAR', repoName)
 
 resource r_deploy_script_2 'Microsoft.Compute/virtualMachines/runCommands@2022-03-01' = if (deploy_app_script) {
   parent: r_vm_1

@@ -195,9 +195,10 @@ module r_deploy_managed_run_cmd 'modules/bootstrap/run_command_on_vm.bicep'= {
   params: {
     deploymentParams:deploymentParams
     vmName: r_vm.outputs.vmName
-    appConfigName: r_appConfig.outputs.appConfigName
     repoName: brandTags.project
     deploy_app_script: true
+    svc_bus_ns_name: r_svc_bus.outputs.svc_bus_ns_name
+    svc_bus_q_name: r_svc_bus.outputs.svc_bus_q_name
     tags: tags
   }
   dependsOn: [
