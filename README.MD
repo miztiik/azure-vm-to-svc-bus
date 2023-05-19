@@ -106,7 +106,7 @@ By leveraging the power of Bicep, all necessary resources can be easily provisio
 
         Upon successful execution, You should receive `200` response code from the endpoint. If you navigate to the portal, You should see the metrics in the dashboard..
 
-      ![Miztiik Automation - Orchestrating Events with Azure Service Bus and Azure VMs using Managed Identity](images/miztiik_architecture_azure_vm_to_service_bus_using_managed_identity_002.png)
+      ![Miztiik Automation - Orchestrating Events with Azure Service Bus and Azure VMs using Managed Identity](images/miztiik_architecture_azure_vm_to_service_bus_using_managed_identity_0002.png)
 
       ![Miztiik Automation - Orchestrating Events with Azure Service Bus and Azure VMs using Managed Identity](images/miztiik_architecture_azure_vm_to_service_bus_using_managed_identity_003.png)
 
