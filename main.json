@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.17.1.54307",
-      "templateHash": "6199699812710768772"
+      "templateHash": "10970301698875646738"
     }
   },
   "parameters": {
@@ -956,7 +956,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.17.1.54307",
-              "templateHash": "8525374639891745717"
+              "templateHash": "12093033163281963043"
             }
           },
           "parameters": {
@@ -1222,7 +1222,7 @@
               "type": "Microsoft.Authorization/roleAssignments",
               "apiVersion": "2022-04-01",
               "scope": "[format('Microsoft.Storage/storageAccounts/{0}/blobServices/{1}/containers/{2}', split(format('{0}/default/{1}', parameters('saName'), parameters('blobContainerName')), '/')[0], split(format('{0}/default/{1}', parameters('saName'), parameters('blobContainerName')), '/')[1], split(format('{0}/default/{1}', parameters('saName'), parameters('blobContainerName')), '/')[2])]",
-              "name": "[guid('r_attachBlobOwnerPermsToRole', resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('r_usr_mgd_identity_name')), parameters('blobOwnerRoleId'))]",
+              "name": "[guid('r_attach_perms_to_role_BlobOwner', resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('r_usr_mgd_identity_name')), parameters('blobOwnerRoleId'))]",
               "properties": {
                 "description": "Blob Owner Permission to ResourceGroup scope",
                 "roleDefinitionId": "[resourceId('Microsoft.Authorization/roleDefinitions', parameters('blobOwnerRoleId'))]",
@@ -2029,14 +2029,17 @@
           "vmName": {
             "value": "[reference(resourceId('Microsoft.Resources/deployments', format('{0}_{1}_Vm', parameters('vmParams').vmNamePrefix, parameters('deploymentParams').global_uniqueness)), '2022-09-01').outputs.vmName.value]"
           },
-          "appConfigName": {
-            "value": "[reference(resourceId('Microsoft.Resources/deployments', format('{0}_{1}_Config', parameters('appConfigParams').appConfigNamePrefix, parameters('deploymentParams').global_uniqueness)), '2022-09-01').outputs.appConfigName.value]"
-          },
           "repoName": {
             "value": "[parameters('brandTags').project]"
           },
           "deploy_app_script": {
             "value": true
+          },
+          "svc_bus_ns_name": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', format('{0}_{1}_Svc_Bus', parameters('serviceBusParams').serviceBusNamePrefix, parameters('deploymentParams').global_uniqueness)), '2022-09-01').outputs.svc_bus_ns_name.value]"
+          },
+          "svc_bus_q_name": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', format('{0}_{1}_Svc_Bus', parameters('serviceBusParams').serviceBusNamePrefix, parameters('deploymentParams').global_uniqueness)), '2022-09-01').outputs.svc_bus_q_name.value]"
           },
           "tags": {
             "value": "[parameters('tags')]"
@@ -2049,7 +2052,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.17.1.54307",
-              "templateHash": "8081075157279176829"
+              "templateHash": "9642250854493160890"
             }
           },
           "parameters": {
@@ -2059,10 +2062,13 @@
             "deploymentParams": {
               "type": "object"
             },
-            "appConfigName": {
+            "repoName": {
               "type": "string"
             },
-            "repoName": {
+            "svc_bus_ns_name": {
+              "type": "string"
+            },
+            "svc_bus_q_name": {
               "type": "string"
             },
             "tags": {
@@ -2076,8 +2082,8 @@
           "variables": {
             "command_to_clone_repo_with_vars": "REPO_NAME=\"REPO_NAME_VAR\" && \\\nGIT_REPO_URL=\"https://github.com/miztiik/$REPO_NAME.git\" && \\\ncd /var && \\\nrm -rf /var/$REPO_NAME && \\\ngit clone $GIT_REPO_URL && \\\ncd /var/$REPO_NAME && \\\nchmod +x /var/$REPO_NAME/modules/vm/bootstrap_scripts/deploy_app.sh && \\\nbash /var/$REPO_NAME/modules/vm/bootstrap_scripts/deploy_app.sh &\n",
             "command_to_clone_repo": "[replace(variables('command_to_clone_repo_with_vars'), 'REPO_NAME_VAR', parameters('repoName'))]",
-            "script_to_execute_with_vars": "REPO_NAME=\"REPO_NAME_VAR\" && \\\nexport APP_CONFIG_NAME=\"APP_CONFIG_VAR_NAME\" && \\\npython3 /var/$REPO_NAME/app/az_producer_for_cosmos_db.py &\n",
-            "script_to_execute": "[replace(replace(variables('script_to_execute_with_vars'), 'APP_CONFIG_VAR_NAME', parameters('appConfigName')), 'REPO_NAME_VAR', parameters('repoName'))]"
+            "script_to_execute_with_vars": "REPO_NAME=\"REPO_NAME_VAR\" && \\\nexport SVC_BUS_FQDN=\"SVC_BUS_FQDN_VAR\" && \\\nexport SVC_BUS_Q_NAME=\"SVC_BUS_Q_NAME_VAR\" && \\\npython3 /var/$REPO_NAME/app/function_code/az_producer_for_svc_bus &\n",
+            "script_to_execute": "[replace(replace(replace(variables('script_to_execute_with_vars'), 'SVC_BUS_FQDN_VAR', parameters('svc_bus_ns_name')), 'SVC_BUS_Q_NAME_VAR', parameters('svc_bus_q_name')), 'REPO_NAME_VAR', parameters('repoName'))]"
           },
           "resources": [
             {
@@ -2122,7 +2128,7 @@
         }
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Resources/deployments', format('{0}_{1}_Config', parameters('appConfigParams').appConfigNamePrefix, parameters('deploymentParams').global_uniqueness))]",
+        "[resourceId('Microsoft.Resources/deployments', format('{0}_{1}_Svc_Bus', parameters('serviceBusParams').serviceBusNamePrefix, parameters('deploymentParams').global_uniqueness))]",
         "[resourceId('Microsoft.Resources/deployments', format('{0}_{1}_Vm', parameters('vmParams').vmNamePrefix, parameters('deploymentParams').global_uniqueness))]"
       ]
     }

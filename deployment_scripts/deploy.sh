@@ -101,4 +101,4 @@ function deploy_func_code(){
 
 
 deploy_everything $MAIN_BICEP_TEMPL_NAME
-deploy_func_code
+# deploy_func_code

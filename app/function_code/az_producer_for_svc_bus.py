@@ -186,18 +186,8 @@ def write_to_svc_bus(data, _attr):
             # messages = [ServiceBusMessage("First message"), ServiceBusMessage("Second message")]
             # sender.send_messages(messages)
 
-    # try:
-    #     # Send a message
-    #     msg_to_send = ServiceBusMessage(data)
-    #     _r = msg_sender.send_messages(msg_to_send)
-    #     logging.info(f"Message sent: {json.dumps(_r)}")
-        
-    # except Exception as e:
-    #     print("An error occurred while sending the message:", str(e))
-        
 
 def main():
-# def main(req: func.HttpRequest, outputBlob: func.Out[str], doc: func.Out[func.Document], context: func.Context) -> func.HttpResponse:
     recv_cnt={}
     req_body={}
     _d={
