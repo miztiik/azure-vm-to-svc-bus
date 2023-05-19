@@ -8,11 +8,14 @@ param deploymentParams object
 param tags object
 
 param r_usr_mgd_identity_name string
+
 param saName string
 param blobContainerName string
 param saPrimaryEndpointsBlob string
 
 param appConfigName string
+
+param svc_bus_ns_name string
 
 param logAnalyticsPayGWorkspaceId string
 
@@ -53,7 +56,7 @@ var LinuxConfiguration = {
 
 
 // Resource References
-resource r_blob_Ref 'Microsoft.Storage/storageAccounts/blobServices/containers@2021-04-01' existing = {
+resource r_blob_ref 'Microsoft.Storage/storageAccounts/blobServices/containers@2021-04-01' existing = {
   name: '${saName}/default/${blobContainerName}'
 }
 
@@ -62,6 +65,10 @@ resource r_userManagedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities
   name: r_usr_mgd_identity_name
 }
 
+// Get Service Bus Namespace Reference
+resource r_svc_bus_ns_ref 'Microsoft.ServiceBus/namespaces@2022-01-01-preview' existing = {
+  name: svc_bus_ns_name
+}
 
 resource r_publicIp 'Microsoft.Network/publicIPAddresses@2022-05-01' = {
   name: publicIpName
@@ -235,9 +242,9 @@ var blobPermsConditionStr= '((!(ActionMatches{\'Microsoft.Storage/storageAccount
 // Refined Scope with conditions
 // https://learn.microsoft.com/en-us/azure/templates/microsoft.authorization/roleassignments?pivots=deployment-language-bicep
 
-resource r_attachBlobOwnerPermsToRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid('r_attachBlobOwnerPermsToRole', r_userManagedIdentity.id, blobOwnerRoleId)
-  scope: r_blob_Ref
+resource r_attach_perms_to_role_BlobOwner 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid('r_attach_perms_to_role_BlobOwner', r_userManagedIdentity.id, blobOwnerRoleId)
+  scope: r_blob_ref
   properties: {
     description: 'Blob Owner Permission to ResourceGroup scope'
     roleDefinitionId: resourceId('Microsoft.Authorization/roleDefinitions', blobOwnerRoleId)
@@ -287,9 +294,9 @@ resource r_attach_perms_to_role_appConfigOwner 'Microsoft.Authorization/roleAssi
 
 var svcBusRoleId='090c5cfd-751d-490a-894a-3ce6f1109419'
 
-resource r_attach_perms_to_role_SvcBusOwnerPerms 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+resource r_attach_perms_to_role_SvcBusOwner 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   name: guid('r_attach_perms_to_role_SvcBusOwnerPerms', r_userManagedIdentity.id, svcBusRoleId)
-  scope: r_blob_Ref
+  scope: r_svc_bus_ns_ref
   properties: {
     description: 'Azure Service Owner Permission to ResourceGroup scope'
     roleDefinitionId: resourceId('Microsoft.Authorization/roleDefinitions', svcBusRoleId)

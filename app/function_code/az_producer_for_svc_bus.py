@@ -26,13 +26,29 @@ class GlobalArgs:
     LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
     EVNT_WEIGHTS = {"success": 80, "fail": 20}
     TRIGGER_RANDOM_FAILURES = os.getenv("TRIGGER_RANDOM_FAILURES", True)
-    WAIT_SECS_BETWEEN_MSGS = int(os.getenv("WAIT_SECS_BETWEEN_MSGS", 5))
+    WAIT_SECS_BETWEEN_MSGS = int(os.getenv("WAIT_SECS_BETWEEN_MSGS", 2))
     TOT_MSGS_TO_PRODUCE = int(os.getenv("TOT_MSGS_TO_PRODUCE", 10))
     SVC_BUS_CONNECTION_STR = os.getenv("SVC_BUS_CONNECTION_STR")
     SVC_BUS_FQDN = os.getenv("SVC_BUS_FQDN", "warehouse-q-svc-bus-ns-002.servicebus.windows.net")
     SVC_BUS_Q_NAME = os.getenv("SVC_BUS_Q_NAME","warehouse-q-svc-bus-q-002")
     SVC_BUS_TOPIC_NAME = os.getenv("SVC_BUS_TOPIC_NAME")
 
+def set_logging(lv=GlobalArgs.LOG_LEVEL, log_filename="/var/log/miztiik.json"):
+    logging.basicConfig(level=lv)
+    logger = logging.getLogger()
+    logger.setLevel(lv)
+    # Generate log filename with desired format
+    # log_filename = f"/var/log/miztiik-store-events-{datetime.datetime.now().strftime('%Y-%m-%d')}.json"
+    # # Add a FileHandler to write logs to a file
+    # fh = logging.FileHandler(log_filename)
+    # fh.setLevel(lv)
+    # formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    # fh.setFormatter(formatter)
+    # logger.addHandler(fh)
+    return logger
+
+
+logger = set_logging()
 
 def _rand_coin_flip():
     r = False
@@ -83,14 +99,8 @@ def evnt_producer():
                 "contact_me": "github.com/miztiik"
             }
             _attr = {
-                "event_type": {
-                    "DataType": "String",
-                    "StringValue": _evnt_type
-                },
-                "priority_shipping": {
-                    "DataType": "String",
-                    "StringValue": f"{p_s}"
-                }
+                "event_type": _evnt_type,
+                "priority_shipping": f"{p_s}"
             }
 
             # Make order type return
@@ -118,7 +128,7 @@ def evnt_producer():
             # logging.info('Document injestion success')
 
             # Write To Service Bus
-            write_to_svc_bus(json.dumps(evnt_body))
+            write_to_svc_bus(evnt_body, _attr)
 
             t_msgs += 1
             t_sales += _s
@@ -132,7 +142,7 @@ def evnt_producer():
         resp["inventory_evnts"] = inventory_evnts
         resp["tot_sales"] = t_sales
         resp["status"] = True
-        logging.info(f'{GREEN_COLOR} {{"resp":{json.dumps(resp)}}} {RESET_COLOR}')
+        # logging.info(f'{GREEN_COLOR} {{"resp":{json.dumps(resp)}}} {RESET_COLOR}')
 
     except Exception as e:
         logging.error(f"ERROR:{str(e)}")
@@ -155,17 +165,22 @@ def _get_n_set_app_config(credential):
     except Exception as e:
         logging.exception(f"ERROR:{str(e)}")
 
-def write_to_svc_bus(data):
+def write_to_svc_bus(data, _attr):
     # Setup up Azure Credentials
-    azure_log_level = logging.getLogger("azure").setLevel(logging.DEBUG)
+    azure_log_level = logging.getLogger("azure").setLevel(logging.ERROR)
     credential = DefaultAzureCredential(logging_enable=False,logging=azure_log_level)
 
     with  ServiceBusClient(GlobalArgs.SVC_BUS_FQDN, credential=credential) as client:
         with client.get_queue_sender(GlobalArgs.SVC_BUS_Q_NAME) as sender:
             # Sending a single message
-            msg_to_send = ServiceBusMessage(data)
+            msg_to_send = ServiceBusMessage(
+                json.dumps(data),
+                time_to_live = datetime.timedelta(days=1),
+                application_properties=_attr
+            )
+            
             _r = sender.send_messages(msg_to_send)
-            logging.info(f"Message sent: {json.dumps(_r)}")
+            logging.debug(f"Message sent: {json.dumps(_r)}")
 
             # # Sending a list of messages
             # messages = [ServiceBusMessage("First message"), ServiceBusMessage("Second message")]
@@ -183,8 +198,6 @@ def write_to_svc_bus(data):
 
 def main():
 # def main(req: func.HttpRequest, outputBlob: func.Out[str], doc: func.Out[func.Document], context: func.Context) -> func.HttpResponse:
-    logging.info('Python HTTP trigger function processed a request.')
-
     recv_cnt={}
     req_body={}
     _d={
@@ -195,27 +208,22 @@ def main():
     # Setup Azure Clients
     # azure_log_level = logging.getLogger('azure.core.pipeline.policies.http_logging_policy').setLevel(logging.ERROR) 
 
-
     # Get Config data from App Config
     # _get_n_set_app_config(credential)
 
     try:   
         resp = evnt_producer()
-        logging.info(f"Processed Data resp: {json.dumps(resp)}")
         _d["resp"] = resp
-        _d["count"] = recv_cnt
+        _d["count"] = GlobalArgs.TOT_MSGS_TO_PRODUCE
         _d["miztiik_event_processed"] = True
         _d["last_processed_on"] = datetime.datetime.now().isoformat()
-        _d["msg"] = f"Generated {recv_cnt} messages"
-        logging.info(f"Processed Data: {json.dumps(_d)}")
-
+        _d["msg"] = f"Generated {GlobalArgs.TOT_MSGS_TO_PRODUCE} messages"
+        logging.info(f"{GREEN_COLOR} {json.dumps(_d)} {RESET_COLOR}")
     except Exception as e:
         logging.exception(f"ERROR:{str(e)}")
     
-    return func.HttpResponse(
-        f"{json.dumps(_d)}",
-            status_code=200
-    )
+    return f"{json.dumps(_d)}"
 
 
-main()
+if __name__ == "__main__": 
+    main()

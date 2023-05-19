@@ -83,7 +83,6 @@ module r_blob 'modules/storage/create_blob.bicep' = {
 
 // Create the Service Bus
 module r_svc_bus 'modules/integration/create_svc_bus.bicep' = {
-  // scope: resourceGroup(r_rg.name)
   name: '${serviceBusParams.serviceBusNamePrefix}_${deploymentParams.global_uniqueness}_Svc_Bus'
   params: {
     deploymentParams:deploymentParams
@@ -115,6 +114,8 @@ module r_vm 'modules/vm/create_vm.bicep' = {
     saPrimaryEndpointsBlob: r_sa.outputs.saPrimaryEndpointsBlob
 
     appConfigName: r_appConfig.outputs.appConfigName
+
+    svc_bus_ns_name: r_svc_bus.outputs.svc_bus_ns_name
 
     vmParams: vmParams
     vnetName: r_vnet.outputs.vnetName

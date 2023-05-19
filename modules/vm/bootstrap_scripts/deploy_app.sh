@@ -50,6 +50,7 @@ function clone_git_repo(){
   log_this "Cloning Repo"
     # mkdir -p /var/
     cd /var
+    rm -rf /var/$REPO_NAME
     git clone $GIT_REPO_URL
     cd /var/$REPO_NAME
 }
@@ -87,6 +88,7 @@ function install_azure_python_sdk(){
   python3 -m pip install --no-cache-dir --upgrade install azure-storage-queue
   python3 -m pip install --no-cache-dir --upgrade install azure-appconfiguration-provider
   python3 -m pip install --no-cache-dir --upgrade install azure-cosmos
+  python3 -m pip install --no-cache-dir --upgrade install azure-servicebus
   
   log_this "End of Azure Python SDK Installation"
 }
